@@ -1,0 +1,215 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  sudo: no
+  vars:
+    homebrew_taps:
+      - homebrew/binary
+      - homebrew/dupes
+      - caskroom/cask
+      - sanemat/font
+    homebrew_packages:
+      - { name: readline }
+      - { name: openssl }
+      - { name: openssl, state: linked, install_options: force }
+      - { name: autoconf }
+      - { name: glib }
+      - { name: libtool }
+      - { name: q }
+      - { name: automake }
+      - { name: gmp }
+      - { name: libxml2 }
+      - { name: qpdf }
+      - { name: boost }
+      - { name: gmp4 }
+      - { name: libyaml }
+      - { name: qt }
+      - { name: byobu }
+      - { name: gmp@4 }
+      - { name: little-cms2 }
+      - { name: r }
+      - { name: c-ares }
+      - { name: gnu-sed }
+      - { name: lua }
+      - { name: rbenv }
+      - { name: cairo }
+      - { name: gnuplot }
+      - { name: readline }
+      - { name: gnutls }
+      - { name: cmake }
+      - { name: go }
+      - { name: mongodb }
+      - { name: ruby-build }
+      - { name: coreutils }
+      - { name: s-lang }
+      - { name: ctags }
+      - { name: sbt }
+      - { name: cvs }
+      - { name: harfbuzz }
+      - { name: scala }
+      - { name: czmq }
+      - { name: highlight }
+      - { name: msgpack }
+      - { name: siege }
+      - { name: d-bus }
+      - { name: htop-osx }
+      - { name: mupdf-tools }
+      - { name: sqlite }
+      - { name: eigen }
+      - { name: icu4c }
+      - { name: sshfs }
+      - { name: ilmbase }
+      - { name: nettle }
+      - { name: swftools }
+      - { name: elixir }
+      - { name: imagemagick }
+      - { name: newt }
+      - { name: terminal-notifier }
+      - { name: erlang }
+      - { name: isl }
+      - { name: nginx }
+      - { name: the_silver_searcher }
+      - { name: ffmpeg }
+      - { name: isl011 }
+      - { name: nkf }
+      - { name: tig }
+      - { name: fontconfig }
+      - { name: node }
+      - { name: tmux }
+      - { name: fontforge }
+      - { name: jbig2dec }
+      - { name: numpy }
+      - { name: tree }
+      - { name: freetype }
+      - { name: jenv }
+      - { name: opencv }
+      - { name: unrar }
+      - { name: fswatch }
+      - { name: jpeg }
+      - { name: openexr }
+      - { name: vim }
+      - { name: gawk }
+      - { name: kobito-cli }
+      - { name: openssl }
+      - { name: vimpager }
+      - { name: gcc }
+      - { name: lame }
+      - { name: pandoc }
+      - { name: watch }
+      - { name: libevent }
+      - { name: pango }
+      - { name: wget }
+      - { name: libffi }
+      - { name: pcre }
+      - { name: libgcrypt }
+      - { name: pdftk }
+      - { name: wxmac }
+      - { name: libgpg-error }
+      - { name: gd }
+      - { name: libksba }
+      - { name: phantomjs }
+      - { name: xvid }
+      - { name: gdbm }
+      - { name: libmpc }
+      - { name: pixman }
+      - { name: xz }
+      - { name: geoip }
+      - { name: libmpc08 }
+      - { name: pkg-config }
+      - { name: yarn }
+      - { name: gettext }
+      - { name: popt }
+      - { name: youtube-dl }
+      - { name: ghostscript }
+      - { name: libpng }
+      - { name: postgresql }
+      - { name: zeromq }
+      - { name: gibo }
+      - { name: libsodium }
+      - { name: libtasn1 }
+      - { name: pyenv-virtualenv }
+      - { name: git-flow }
+      - { name: libtiff }
+    homebrew_cask_packages:
+      - { name: iterm2 }
+      - { name: google-chrome }
+      - { name: adobe-reader }
+      - { name: java }
+      - { name: skype }
+      - { name: slack }
+      - { name: sourcetree }
+      - { name: karabiner }
+      - { name: seil }
+      - { name: flux }
+      - { name: dash }
+      - { name: skitch }
+      - { name: seashore }
+      - { name: alfred }
+      - { name: atom }
+      - { name: slack}
+      - { name: kobito }
+      - { name: intellij-idea }
+      - { name: visual-studio-code }
+      - { name: vagrant }
+      - { name: virtualbox }
+      - { name: bartender }
+      - { name: shiftit }
+      - { name: dropbox }
+      - { name: 1password }
+
+  tasks:
+    - name: homebrew の tap リポジトリを追加
+      homebrew_tap: tap={{ item }} state=present
+      with_items: homebrew_taps
+
+    - name: homebrew をアップデート
+      homebrew: update_homebrew=yes
+
+    # brew
+    - name: brew パッケージをインストール
+      homebrew: >
+        name={{ item.name }}
+        state={{ item.state | default('latest') }}
+        install_options={{
+          item.install_options | default() | join(',')
+          if item.install_options is not string
+          else item.install_options
+        }}
+      with_items: homebrew_packages
+      register: brew_result
+    - name: brew パッケージの情報保存先ディレクトリを作成
+      file: path=brew_info state=directory
+    - name: brew パッケージの情報を保存
+      shell: brew info {{ item }} > brew_info/{{ item }}
+      with_items: brew_result.results | selectattr('changed') | map(attribute='item') | map(attribute='name') | list
+
+    # cask
+    - name: homebrew-cask のインストール
+      homebrew: name=brew-cask state=latest
+    - name: cask パッケージをインストール
+      homebrew_cask: name={{ item.name }} state={{ item.state|default('installed') }}
+      with_items: homebrew_cask_packages
+      register: cask_result
+    - name: cask パッケージの情報保存先ディレクトリを作成
+      file: path=cask_info state=directory
+    - name: cask パッケージの情報を保存
+      shell: brew cask info {{ item }} > cask_info/{{ item }}
+      with_items: cask_result.results | selectattr('changed') | map(attribute='item') | map(attribute='name') | list
+
+    # Ricty
+    - name: xquartz のインストール (for Ricty)
+      homebrew_cask: name=xquartz
+    - name: fontforge のインストール (for Ricty)
+      homebrew: name=fontforge
+    - name: Ricty のインストール
+      homebrew: name=ricty
+    - name: 生成されたフォントファイルをコピー
+      shell: cp -f $(brew --cellar ricty)/*/share/fonts/Ricty*.ttf ~/Library/Fonts/
+      args:
+        creates: ~/Library/Fonts/Ricty-Bold.ttf
+      notify: run fc-cache
+
+  handlers:
+    - name: run fc-cache
+      shell: fc-cache -vf
