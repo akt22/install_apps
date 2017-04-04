@@ -131,6 +131,7 @@
       - { name: pyenv-virtualenv }
       - { name: git-flow }
       - { name: libtiff }
+      - { name: kubectl }
     homebrew_cask_packages:
       - { name: iterm2 }
       - { name: google-chrome }
