@@ -137,16 +137,12 @@
       - { name: google-chrome }
       - { name: google-japanese-ime }
       - { name: adobe-reader }
-      - { name: java }
       - { name: skype }
       - { name: slack }
       - { name: sourcetree }
-      - { name: karabiner }
-      - { name: seil }
       - { name: flux }
       - { name: dash }
       - { name: skitch }
-      - { name: seashore }
       - { name: alfred }
       - { name: atom }
       - { name: slack}
@@ -163,7 +159,7 @@
   tasks:
     - name: homebrew の tap リポジトリを追加
       homebrew_tap: tap={{ item }} state=present
-      with_items: homebrew_taps
+      with_items: "{{ homebrew_taps }}"
 
     - name: homebrew をアップデート
       homebrew: update_homebrew=yes
@@ -178,25 +174,24 @@
           if item.install_options is not string
           else item.install_options
         }}
-      with_items: homebrew_packages
+      with_items: "{{ homebrew_packages }}"
       register: brew_result
+      ignore_errors: true
     - name: brew パッケージの情報保存先ディレクトリを作成
-      file: path=brew_info state=directory
-    - name: brew パッケージの情報を保存
-      shell: brew info {{ item }} > brew_info/{{ item }}
-      with_items: brew_result.results | selectattr('changed') | map(attribute='item') | map(attribute='name') | list
+      file: path={{ brew_info }} state=directory
 
     # cask
-    - name: homebrew-cask のインストール
-      homebrew: name=brew-cask state=latest
+    # - name: homebrew-cask のインストール
+    #   homebrew: name=brew-cask state=latest
     - name: cask パッケージをインストール
       homebrew_cask: name={{ item.name }} state={{ item.state|default('installed') }}
-      with_items: homebrew_cask_packages
+      with_items: "{{ homebrew_cask_packages }}"
       register: cask_result
+      ignore_errors: true
     - name: cask パッケージの情報保存先ディレクトリを作成
-      file: path=cask_info state=directory
+      file: path={{ cask_info }} state=directory
     - name: cask パッケージの情報を保存
-      shell: brew cask info {{ item }} > cask_info/{{ item }}
+      shell: brew cask info {{ item }} > {{ cask_info }}/{{ item }}
       with_items: cask_result.results | selectattr('changed') | map(attribute='item') | map(attribute='name') | list
 
     # Ricty
